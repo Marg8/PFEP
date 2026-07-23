@@ -95,8 +95,8 @@ function upload_foto(string $field, ?string $existing_name, string &$error): str
     // Delete old photo after successful upload
     if ($existing_name) {
         $old_path = __DIR__ . '/uploads/' . $existing_name;
-        if (is_file($old_path)) {
-            @unlink($old_path);
+        if (is_file($old_path) && is_writable($old_path)) {
+            unlink($old_path);
         }
     }
 
@@ -124,7 +124,6 @@ if (!$numero_parte) {
     $errors[] = 'El Número de Parte es obligatorio.';
 }
 
-$valid_clases = ['Chico', 'Mediano', 'Grande', null];
 if ($clasificacion !== null && !in_array($clasificacion, ['Chico', 'Mediano', 'Grande'], true)) {
     $errors[] = 'Clasificación de tamaño no válida.';
     $clasificacion = null;

@@ -33,8 +33,8 @@ if (!$row) {
 foreach (['foto_producto', 'foto_empaque'] as $field) {
     if ($row[$field]) {
         $path = __DIR__ . '/uploads/' . $row[$field];
-        if (is_file($path)) {
-            @unlink($path);
+        if (is_file($path) && is_writable($path)) {
+            unlink($path);
         }
     }
 }

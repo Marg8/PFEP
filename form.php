@@ -234,7 +234,7 @@ function foto_url(?string $filename): ?string {
                     <select id="clasificacion" name="clasificacion">
                         <option value="">— Seleccionar —</option>
                         <option value="Chico"  <?= sel('clasificacion', 'Chico',   $old, $row) ?>>Chico</option>
-                        <option value="Mediano"<?= sel('clasificacion', 'Mediano', $old, $row) ?>>Mediano</option>
+                        <option value="Mediano" <?= sel('clasificacion', 'Mediano', $old, $row) ?>>Mediano</option>
                         <option value="Grande" <?= sel('clasificacion', 'Grande',  $old, $row) ?>>Grande</option>
                     </select>
                 </div>
