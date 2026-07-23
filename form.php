@@ -109,15 +109,22 @@ function foto_url(?string $filename): ?string {
 
                 <!-- Foto del Producto -->
                 <div class="form-group">
-                    <label for="foto_producto">Foto del Producto / Material</label>
-                    <div class="file-wrap">
+                    <label>Foto del Producto / Material</label>
+                    <div class="photo-picker">
+                        <div class="photo-btns">
+                            <button type="button" class="btn-camera" data-target="foto_producto">
+                                📷 Tomar Foto
+                            </button>
+                            <button type="button" class="btn-gallery" data-target="foto_producto">
+                                🖼️ Seleccionar
+                            </button>
+                        </div>
                         <input type="file"
                                id="foto_producto"
                                name="foto_producto"
-                               class="foto-input"
+                               class="foto-input hidden-input"
                                data-preview="prev_producto"
-                               accept="image/*"
-                               capture="environment">
+                               accept="image/*">
                     </div>
                     <div id="prev_producto" class="foto-preview">
                         <?php $u = foto_url($row['foto_producto'] ?? null); ?>
@@ -130,15 +137,22 @@ function foto_url(?string $filename): ?string {
 
                 <!-- Foto del Empaque -->
                 <div class="form-group">
-                    <label for="foto_empaque">Foto del Empaque <small>(parcial/bolsas o completo/cerrado)</small></label>
-                    <div class="file-wrap">
+                    <label>Foto del Empaque <small>(parcial/bolsas o completo/cerrado)</small></label>
+                    <div class="photo-picker">
+                        <div class="photo-btns">
+                            <button type="button" class="btn-camera" data-target="foto_empaque">
+                                📷 Tomar Foto
+                            </button>
+                            <button type="button" class="btn-gallery" data-target="foto_empaque">
+                                🖼️ Seleccionar
+                            </button>
+                        </div>
                         <input type="file"
                                id="foto_empaque"
                                name="foto_empaque"
-                               class="foto-input"
+                               class="foto-input hidden-input"
                                data-preview="prev_empaque"
-                               accept="image/*"
-                               capture="environment">
+                               accept="image/*">
                     </div>
                     <div id="prev_empaque" class="foto-preview">
                         <?php $u = foto_url($row['foto_empaque'] ?? null); ?>

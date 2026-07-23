@@ -257,18 +257,62 @@ table.catalog .no-foto {
 }
 .form-group .hint { font-size: .74rem; color: #78909c; }
 
-/* File input */
-.file-wrap input[type="file"] {
-    width: 100%;
+/* ---- Photo picker ---- */
+.hidden-input { display: none; }
+
+.photo-picker {
     border: 2px dashed var(--green-400);
     border-radius: var(--radius);
-    padding: 9px;
     background: var(--green-50);
-    cursor: pointer;
-    font-size: .85rem;
-    transition: border-color .2s;
+    padding: 12px;
 }
-.file-wrap input[type="file"]:hover { border-color: var(--green-700); }
+
+.photo-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-camera,
+.btn-gallery {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: var(--radius);
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: background .2s, transform .1s;
+}
+.btn-camera:hover,
+.btn-gallery:hover { transform: translateY(-1px); }
+
+.btn-camera {
+    background: linear-gradient(135deg, var(--green-700), var(--green-600));
+    color: var(--white);
+    box-shadow: 0 2px 6px rgba(46,125,50,.3);
+}
+.btn-camera:hover { background: linear-gradient(135deg, var(--green-900), var(--green-700)); }
+
+.btn-gallery {
+    background: var(--white);
+    color: var(--green-800);
+    border: 2px solid var(--green-400);
+}
+.btn-gallery:hover { background: var(--green-100); }
+
+/* Selected file name */
+.photo-filename {
+    margin-top: 8px;
+    font-size: .78rem;
+    color: var(--text-light);
+    text-align: center;
+    min-height: 1.2em;
+}
+
 .foto-preview { margin-top: 8px; }
 .foto-preview img {
     max-width: 120px;
