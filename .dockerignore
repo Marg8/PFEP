@@ -1,0 +1,7 @@
+.git
+.github
+.gitignore
+*.md
+.devcontainer
+uploads/*
+!uploads/.gitkeep
