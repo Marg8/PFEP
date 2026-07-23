@@ -1,19 +1,18 @@
 <?php
-/**
- * Database connection configuration.
- * Copy this file to config/db.php and adjust the credentials.
- */
-
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'pfep');
-define('DB_USER', 'root');       // Change to your MySQL user
-define('DB_PASS', '');           // Change to your MySQL password
+define('DB_HOST',    getenv('DB_HOST')    ?: 'localhost');
+define('DB_NAME',    getenv('DB_NAME')    ?: 'pfep');
+define('DB_USER',    getenv('DB_USER')    ?: 'root');
+define('DB_PASS',    getenv('DB_PASS')    ?: '');
+define('DB_SOCKET',  getenv('DB_SOCKET')  ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
 function get_db(): PDO {
     static $pdo = null;
     if ($pdo === null) {
-        $dsn = sprintf('mysql:host=%s;dbname=%s;charset=%s', DB_HOST, DB_NAME, DB_CHARSET);
+        $dsn = DB_SOCKET
+            ? sprintf('mysql:unix_socket=%s;dbname=%s;charset=%s', DB_SOCKET, DB_NAME, DB_CHARSET)
+            : sprintf('mysql:host=%s;dbname=%s;charset=%s', DB_HOST, DB_NAME, DB_CHARSET);
+
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
