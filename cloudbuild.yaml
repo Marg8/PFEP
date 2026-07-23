@@ -25,17 +25,19 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --port=8080
-      - --set-env-vars=DB_NAME=$_DB_NAME
-      - --set-secrets=DB_USER=pfep-db-user:latest,DB_PASS=pfep-db-pass:latest
-      - --add-cloudsql-instances=$_CLOUDSQL_INSTANCE
-      - --set-env-vars=DB_SOCKET=/cloudsql/$_CLOUDSQL_INSTANCE
+      # VPC Connector para acceder a red interna (mtapp05)
+      - --vpc-connector=$_VPC_CONNECTOR
+      - --vpc-egress=private-ranges-only
+      # DB en red interna
+      - --set-env-vars=DB_HOST=$_DB_HOST,DB_PORT=3306,DB_NAME=materials,DB_USER=mrodriguez
+      - --set-secrets=DB_PASS=pfep-db-pass:latest
 
 substitutions:
   _REGION: us-central1
   _REPO: pfep
   _SERVICE: pfep-app
-  _DB_NAME: pfep
-  _CLOUDSQL_INSTANCE: YOUR_PROJECT:us-central1:pfep-db
+  _VPC_CONNECTOR: pfep-connector       # nombre del conector creado por setup-gcp.sh
+  _DB_HOST: 10.X.X.X                   # IP interna de mtapp05 — cambiar antes de deploy
 
 images:
   - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$COMMIT_SHA'
