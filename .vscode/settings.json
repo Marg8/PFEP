@@ -1,0 +1,13 @@
+{
+  "database-client.connections": [
+    {
+      "name": "PFEP (local MariaDB)",
+      "host": "127.0.0.1",
+      "port": 3306,
+      "user": "pfep",
+      "password": "pfep",
+      "database": "pfep",
+      "dbType": "mysql"
+    }
+  ]
+}
