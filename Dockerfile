@@ -22,5 +22,9 @@ RUN rm -f /var/www/html/index.html 2>/dev/null || true
 
 EXPOSE 8080
 
-# Only PORT is baked in. DB_* must come from the platform (Render env vars, Cloud Run, etc.)
-ENV PORT=8080
+ENV PORT=8080 \
+    DB_HOST=localhost \
+    DB_NAME=pfep \
+    DB_USER=root \
+    DB_PASS="" \
+    DB_SOCKET=""
