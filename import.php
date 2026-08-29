@@ -189,13 +189,11 @@ function import_demand_file(): array {
 </head>
 <body>
 
-<header class="site-header">
-    <h1>📥 PFEP – Importar Demanda</h1>
-    <nav class="header-nav">
-        <a href="index.php" class="btn-add">← Catálogo</a>
-        <a href="dashboard.php" class="btn-add">📊 Dashboard</a>
-    </nav>
-</header>
+<?php
+$active_page   = 'import';
+$page_subtitle = '📥 Importar Demanda';
+require __DIR__ . '/partials/header.php';
+?>
 
 <div class="container">
 

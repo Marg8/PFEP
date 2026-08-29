@@ -46,15 +46,11 @@ function badge_class(?string $clase): string {
 </head>
 <body>
 
-<header class="site-header">
-    <h1>📦 PFEP – Catálogo para Plataforma – Componentes</h1>
-    <nav class="header-nav">
-        <a href="form.php" class="btn-add">+ Agregar Componente</a>
-        <a href="import.php" class="btn-add">📥 Importar Demanda</a>
-        <a href="demanda.php" class="btn-add">👁️ Ver Demanda</a>
-        <a href="dashboard.php" class="btn-add">📊 Dashboard</a>
-    </nav>
-</header>
+<?php
+$active_page   = 'index';
+$page_subtitle = '📦 Catálogo para Plataforma – Componentes';
+require __DIR__ . '/partials/header.php';
+?>
 
 <div class="container">
 

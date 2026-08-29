@@ -58,14 +58,11 @@ function fmt(?float $n, int $dec = 4): string {
 </head>
 <body>
 
-<header class="site-header">
-    <h1>📊 PFEP – Dashboard de Espacio</h1>
-    <nav class="header-nav">
-        <a href="index.php" class="btn-add">← Catálogo</a>
-        <a href="import.php" class="btn-add">📥 Importar Demanda</a>
-        <a href="demanda.php" class="btn-add">👁️ Ver Demanda</a>
-    </nav>
-</header>
+<?php
+$active_page   = 'dashboard';
+$page_subtitle = '📊 Dashboard de Espacio';
+require __DIR__ . '/partials/header.php';
+?>
 
 <div class="container">
 

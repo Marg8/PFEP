@@ -66,10 +66,11 @@ function foto_url(?string $filename): ?string {
 </head>
 <body>
 
-<header class="site-header">
-    <h1>📦 PFEP – <?= htmlspecialchars($title) ?></h1>
-    <a href="index.php" class="btn-add">← Volver al Catálogo</a>
-</header>
+<?php
+$active_page   = 'form';
+$page_subtitle = '📦 ' . $title;
+require __DIR__ . '/partials/header.php';
+?>
 
 <div class="container">
     <div class="form-card">

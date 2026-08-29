@@ -75,6 +75,107 @@ body {
     transform: translateY(-1px);
 }
 
+/* =========================================================
+   Littelfuse Matamoros header layout
+   ========================================================= */
+.lf-header {
+    box-shadow: var(--shadow-md);
+    border-bottom: 3px solid var(--accent);
+}
+
+/* ---- Top banner (welcome / links) ---- */
+.lf-banner {
+    background: var(--white);
+    color: var(--text-light);
+    padding: 6px 20px;
+    text-align: right;
+    font-size: .8rem;
+    border-bottom: 1px solid var(--green-200);
+}
+.lf-banner .lf-welcome { color: var(--text); }
+.lf-banner .lf-welcome b { color: var(--green-800); }
+.lf-banner .lf-accent {
+    color: var(--gray);
+    margin: 0 8px;
+    font-weight: 700;
+}
+.lf-banner .lf-banner-link {
+    color: var(--green-700);
+    text-decoration: none;
+    font-weight: 600;
+}
+.lf-banner .lf-banner-link:hover { text-decoration: underline; }
+
+/* ---- Logo bar (logo + green portal title) ---- */
+.lf-logobar {
+    background: linear-gradient(135deg, var(--green-900) 0%, var(--green-700) 100%);
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 12px 28px;
+}
+.lf-logobar .lf-logo-link { display: inline-flex; align-items: center; }
+.lf-logobar .lf-logo {
+    height: 44px;
+    width: auto;
+    display: block;
+}
+.lf-logobar .lf-portal-title {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #b9f6ca;
+    text-shadow: 0 1px 3px rgba(0,0,0,.35);
+    line-height: 1.15;
+}
+
+/* ---- Menu bar ---- */
+.lf-menu {
+    background: linear-gradient(to right, var(--green-800), var(--green-600));
+    padding: 0 18px;
+}
+.lf-menu ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 0;
+}
+.lf-menu li { margin: 0; }
+.lf-menu li a {
+    display: block;
+    color: var(--white);
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    padding: 12px 18px;
+    border-right: 1px solid rgba(255,255,255,.15);
+    transition: background .2s, color .15s;
+}
+.lf-menu li:first-child a { border-left: 1px solid rgba(255,255,255,.15); }
+.lf-menu li a:hover {
+    background: rgba(255,255,255,.18);
+}
+.lf-menu li.current a {
+    background: var(--white);
+    color: var(--green-900);
+}
+
+/* ---- Optional page subtitle under the menu ---- */
+.lf-page-subtitle {
+    max-width: 1440px;
+    margin: 18px auto 0;
+    padding: 0 18px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--green-900);
+}
+
+@media (max-width: 720px) {
+    .lf-logobar { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .lf-logobar .lf-portal-title { font-size: 15pt; }
+}
+
 /* ---- Main container ---- */
 .container { max-width: 1440px; margin: 0 auto; padding: 24px 18px 48px; }
 
