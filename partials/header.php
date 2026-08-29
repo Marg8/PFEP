@@ -28,7 +28,7 @@ $menu = [
 
     <div class="lf-logobar">
         <a href="index.php" class="lf-logo-link">
-            <img src="images/LFLogo_White.svg" alt="Littelfuse" class="lf-logo">
+            <img src="images/Littelfuse.png" alt="Littelfuse" class="lf-logo">
         </a>
         <span class="lf-portal-title">Littelfuse Matamoros PFEP&nbsp;&ndash;&nbsp;Catálogo para Plataforma</span>
     </div>
