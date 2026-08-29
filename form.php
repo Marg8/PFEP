@@ -98,13 +98,18 @@ function foto_url(?string $filename): ?string {
                 <!-- Número de Parte -->
                 <div class="form-group full">
                     <label for="numero_parte">Número de Parte <span style="color:red">*</span></label>
-                    <input type="text"
-                           id="numero_parte"
-                           name="numero_parte"
-                           value="<?= val('numero_parte', $old, $row) ?>"
-                           placeholder="Ej. 1003344"
-                           maxlength="50"
-                           required>
+                    <div class="scan-field">
+                        <input type="text"
+                               id="numero_parte"
+                               name="numero_parte"
+                               value="<?= val('numero_parte', $old, $row) ?>"
+                               placeholder="Ej. 1003344"
+                               maxlength="50"
+                               required>
+                        <button type="button" id="btn-scan" class="btn-camera" title="Escanear número de parte">
+                            📷 Escanear
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Foto del Producto -->
@@ -266,6 +271,72 @@ function foto_url(?string $filename): ?string {
     </div>
 </div>
 
+<div id="scan-modal" class="scan-modal" hidden>
+    <div class="scan-box">
+        <div class="scan-header">
+            <strong>📷 Escanear número de parte</strong>
+            <button type="button" id="btn-scan-close" class="btn-edit">✖ Cerrar</button>
+        </div>
+        <div id="scan-reader"></div>
+        <p id="scan-status" class="muted">Apunta la cámara al código de barras o QR.</p>
+    </div>
+</div>
+
 <script src="js/app.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function () {
+    var openBtn  = document.getElementById('btn-scan');
+    var closeBtn = document.getElementById('btn-scan-close');
+    var modal    = document.getElementById('scan-modal');
+    var status   = document.getElementById('scan-status');
+    var input    = document.getElementById('numero_parte');
+    if (!openBtn || !modal || !input || typeof Html5Qrcode === 'undefined') return;
+
+    var scanner = null;
+
+    function stopScanner() {
+        if (!scanner) return Promise.resolve();
+        var s = scanner;
+        scanner = null;
+        return s.stop().then(function () { s.clear(); }).catch(function () {});
+    }
+
+    function closeModal() {
+        stopScanner().finally(function () { modal.hidden = true; });
+    }
+
+    function onScanSuccess(decodedText) {
+        var value = (decodedText || '').trim();
+        if (!value) return;
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        status.textContent = '✅ Leído: ' + value;
+        stopScanner().finally(function () { modal.hidden = true; });
+    }
+
+    openBtn.addEventListener('click', function () {
+        modal.hidden = false;
+        status.textContent = 'Iniciando cámara…';
+        scanner = new Html5Qrcode('scan-reader');
+        scanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            onScanSuccess,
+            function () { /* ignore per-frame decode errors */ }
+        ).then(function () {
+            status.textContent = 'Apunta la cámara al código de barras o QR.';
+        }).catch(function (err) {
+            status.textContent = '⚠️ No se pudo acceder a la cámara: ' + err;
+            scanner = null;
+        });
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+})();
+</script>
 </body>
 </html>

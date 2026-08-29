@@ -66,6 +66,12 @@ foreach ($rows as $r) {
         <a href="import.php?template=1" class="btn-submit" style="margin-left:auto">⬇️ Exportar CSV</a>
     </div>
 
+    <p class="muted" style="margin-bottom:10px">
+        ✏️ Edita las cantidades directamente en la tabla para simular escenarios y
+        presiona <strong>Guardar</strong>. Solo se actualiza la demanda; las
+        dimensiones e imágenes no se modifican.
+    </p>
+
     <div class="table-wrap">
         <table class="catalog" id="demanda-table">
             <thead>
@@ -75,22 +81,37 @@ foreach ($rows as $r) {
                     <th>Días<br>Seguridad</th>
                     <th>Lead Time<br>(días)</th>
                     <th>Última<br>Actualización</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
             <?php if (empty($rows)): ?>
                 <tr class="empty-row">
-                    <td colspan="5">No hay componentes registrados. <a href="import.php">Importar demanda →</a></td>
+                    <td colspan="6">No hay componentes registrados. <a href="import.php">Importar demanda →</a></td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($rows as $r): ?>
                 <tr data-part="<?= htmlspecialchars(strtolower($r['numero_parte']), ENT_QUOTES, 'UTF-8') ?>"
-                    class="<?= (int)$r['daily_demand'] === 0 ? 'row-pending' : '' ?>">
+                    class="demanda-row <?= (int)$r['daily_demand'] === 0 ? 'row-pending' : '' ?>"
+                    data-part-number="<?= htmlspecialchars($r['numero_parte'], ENT_QUOTES, 'UTF-8') ?>">
                     <td class="parte"><?= htmlspecialchars($r['numero_parte'], ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= number_format((int)$r['daily_demand']) ?></td>
-                    <td><?= (int)$r['safety_stock_days'] ?></td>
-                    <td><?= (int)$r['lead_time_days'] ?></td>
-                    <td><?= htmlspecialchars((string)$r['updated_at'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td>
+                        <input type="number" class="cell-input" data-field="daily_demand"
+                               min="0" step="1" value="<?= (int)$r['daily_demand'] ?>">
+                    </td>
+                    <td>
+                        <input type="number" class="cell-input" data-field="safety_stock_days"
+                               min="0" step="1" value="<?= (int)$r['safety_stock_days'] ?>">
+                    </td>
+                    <td>
+                        <input type="number" class="cell-input" data-field="lead_time_days"
+                               min="0" step="1" value="<?= (int)$r['lead_time_days'] ?>">
+                    </td>
+                    <td class="cell-updated"><?= htmlspecialchars((string)$r['updated_at'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td>
+                        <button type="button" class="btn-edit btn-save-demanda">💾 Guardar</button>
+                        <span class="save-status"></span>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>

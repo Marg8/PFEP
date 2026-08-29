@@ -112,3 +112,46 @@ document.querySelectorAll('input[data-target]').forEach(function(input) {
     input.addEventListener('input', applyFilter);
     applyFilter();
 });
+
+// Inline demand editing (demanda.php)
+document.querySelectorAll('.btn-save-demanda').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var row    = btn.closest('tr.demanda-row');
+        if (!row) return;
+        var status = row.querySelector('.save-status');
+        var part   = row.dataset.partNumber;
+
+        var payload = new URLSearchParams();
+        payload.append('part_number', part);
+        row.querySelectorAll('.cell-input').forEach(function(inp) {
+            payload.append(inp.dataset.field, inp.value === '' ? '0' : inp.value);
+        });
+
+        btn.disabled = true;
+        if (status) { status.textContent = '⏳'; status.className = 'save-status'; }
+
+        fetch('demanda_update.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: payload.toString()
+        })
+        .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, body: j }; }); })
+        .then(function(r) {
+            btn.disabled = false;
+            if (r.ok && r.body.ok) {
+                if (status) { status.textContent = '✅ Guardado'; status.className = 'save-status ok'; }
+                // Highlight zero-demand rows dynamically
+                var demand = parseInt(r.body.daily_demand, 10) || 0;
+                row.classList.toggle('row-pending', demand === 0);
+                var updated = row.querySelector('.cell-updated');
+                if (updated) updated.textContent = new Date().toLocaleString();
+            } else {
+                if (status) { status.textContent = '❌ ' + (r.body.error || 'Error'); status.className = 'save-status err'; }
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            if (status) { status.textContent = '❌ Error de red'; status.className = 'save-status err'; }
+        });
+    });
+});
