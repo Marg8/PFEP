@@ -7,6 +7,9 @@ define('DB_PASS',    getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'L3aNnM43
 define('DB_SOCKET',  getenv('DB_SOCKET')  ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
+// Holgura (safety/slack) factor applied to the required storage volume.
+define('FACTOR_HOLGURA', (float)(getenv('FACTOR_HOLGURA') ?: 1.2));
+
 function get_db(): PDO {
     static $pdo = null;
     if ($pdo === null) {
@@ -46,9 +49,20 @@ function get_db(): PDO {
                 alto            DECIMAL(10,3)                   DEFAULT NULL,
                 peso            DECIMAL(10,3)                   DEFAULT NULL,
                 clasificacion   ENUM('Chico','Mediano','Grande') DEFAULT NULL,
+                daily_demand      INT                           NOT NULL DEFAULT 0,
+                safety_stock_days INT                           NOT NULL DEFAULT 0,
+                lead_time_days    INT                           NOT NULL DEFAULT 0,
                 created_at      TIMESTAMP NOT NULL              DEFAULT CURRENT_TIMESTAMP,
                 updated_at      TIMESTAMP NOT NULL              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        // Ensure demand columns exist on databases created before this feature
+        $pdo->exec("
+            ALTER TABLE componentes
+                ADD COLUMN IF NOT EXISTS daily_demand      INT NOT NULL DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS safety_stock_days INT NOT NULL DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS lead_time_days    INT NOT NULL DEFAULT 0
         ");
     }
     return $pdo;

@@ -50,10 +50,12 @@ function float_input(string $key): ?float {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Upload a photo; returns filename on success, null if no file.      */
-/*  Returns false if upload failed (sets $error string by reference).  */
+/*  Upload a photo into uploads/photos/ with a record-linked name.     */
+/*  Returns the stored relative path (e.g. "photos/1042_...") on        */
+/*  success, null when no file was sent, or false on failure           */
+/*  (sets $error by reference).                                        */
 /* ------------------------------------------------------------------ */
-function upload_foto(string $field, ?string $existing_name, string &$error): string|false|null {
+function upload_foto(string $field, int $record_id, string &$error): string|false|null {
     if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
         return null; // no new file – keep existing
     }
@@ -65,14 +67,22 @@ function upload_foto(string $field, ?string $existing_name, string &$error): str
         return false;
     }
 
+    // Validate extension (allow only jpg, jpeg, png, webp)
+    $allowed_ext = ['jpg', 'jpeg', 'png', 'webp'];
+    $ext         = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed_ext, true)) {
+        $error = "El archivo '{$field}' debe ser JPG, JPEG, PNG o WEBP.";
+        return false;
+    }
+
     // Validate MIME type
-    $allowed_mime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $allowed_mime = ['image/jpeg', 'image/png', 'image/webp'];
     $finfo        = finfo_open(FILEINFO_MIME_TYPE);
     $mime         = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
     if (!in_array($mime, $allowed_mime, true)) {
-        $error = "El archivo '{$field}' no es una imagen válida (JPEG, PNG, GIF o WEBP).";
+        $error = "El archivo '{$field}' no es una imagen válida (JPG, PNG o WEBP).";
         return false;
     }
 
@@ -82,25 +92,36 @@ function upload_foto(string $field, ?string $existing_name, string &$error): str
         return false;
     }
 
-    $ext       = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-    $safe_ext  = preg_replace('/[^a-z0-9]/i', '', $ext);
-    $filename  = uniqid('pfep_', true) . '.' . strtolower($safe_ext);
-    $dest      = __DIR__ . '/uploads/' . $filename;
+    // Ensure the target directory exists (create it with write permissions)
+    $upload_dir = __DIR__ . '/uploads/photos';
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0775, true) && !is_dir($upload_dir)) {
+        $error = "No se pudo crear el directorio de imágenes 'uploads/photos'.";
+        return false;
+    }
+
+    // Structured name: {record_id}_{field}_{original_or_timestamp}.{ext}
+    $base = preg_replace('/[^a-zA-Z0-9_-]+/', '_', pathinfo($file['name'], PATHINFO_FILENAME));
+    $base = trim((string)$base, '_');
+    if ($base === '') {
+        $base = date('YmdHis');
+    }
+
+    $filename = "{$record_id}_{$field}_{$base}.{$ext}";
+    $dest     = $upload_dir . '/' . $filename;
+
+    // Avoid clobbering an existing file that shares the same name
+    if (is_file($dest)) {
+        $filename = "{$record_id}_{$field}_{$base}_" . time() . ".{$ext}";
+        $dest     = $upload_dir . '/' . $filename;
+    }
 
     if (!move_uploaded_file($file['tmp_name'], $dest)) {
         $error = "No se pudo guardar la imagen del campo '{$field}'.";
         return false;
     }
 
-    // Delete old photo after successful upload
-    if ($existing_name) {
-        $old_path = __DIR__ . '/uploads/' . $existing_name;
-        if (is_file($old_path) && is_writable($old_path)) {
-            unlink($old_path);
-        }
-    }
-
-    return $filename;
+    // Stored value is relative to uploads/ so foto_url() keeps working
+    return 'photos/' . $filename;
 }
 
 /* ------------------------------------------------------------------ */
@@ -148,28 +169,12 @@ if ($id > 0) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Handle photo uploads (only if no validation errors so far)        */
+/*  Current photo values (may be replaced by new uploads below)        */
 /* ------------------------------------------------------------------ */
 
 $foto_producto = $existing['foto_producto'] ?? null;
 $foto_empaque  = $existing['foto_empaque']  ?? null;
 $upload_error  = '';
-
-if (empty($errors)) {
-    $result = upload_foto('foto_producto', $foto_producto, $upload_error);
-    if ($result === false) {
-        $errors[] = $upload_error;
-    } elseif ($result !== null) {
-        $foto_producto = $result;
-    }
-
-    $result = upload_foto('foto_empaque', $foto_empaque, $upload_error);
-    if ($result === false) {
-        $errors[] = $upload_error;
-    } elseif ($result !== null) {
-        $foto_empaque = $result;
-    }
-}
 
 /* ------------------------------------------------------------------ */
 /*  On validation error: redirect back                                 */
@@ -200,11 +205,50 @@ if ($stmt->fetch()) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Save to database                                                   */
+/*  Persist record + photos inside a transaction.                      */
+/*  New rows are inserted first so we have the record_id used to name   */
+/*  the files; if any image fails to save the transaction is rolled     */
+/*  back so no orphaned record (or file) is left behind.               */
 /* ------------------------------------------------------------------ */
 
-if ($id > 0) {
-    // UPDATE
+$moved_files   = []; // files written this request (cleaned up on failure)
+$old_to_delete = []; // replaced files, removed only after a good commit
+
+try {
+    $pdo->beginTransaction();
+
+    if ($id > 0) {
+        $record_id = $id;
+    } else {
+        // Create the row first to obtain the id used in the file names
+        $ins = $pdo->prepare('INSERT INTO componentes (numero_parte) VALUES (:numero_parte)');
+        $ins->execute([':numero_parte' => $numero_parte]);
+        $record_id = (int)$pdo->lastInsertId();
+    }
+
+    // Product photo
+    $result = upload_foto('foto_producto', $record_id, $upload_error);
+    if ($result === false) {
+        throw new RuntimeException($upload_error);
+    }
+    if ($result !== null) {
+        if ($foto_producto) $old_to_delete[] = $foto_producto;
+        $foto_producto = $result;
+        $moved_files[] = $result;
+    }
+
+    // Packaging photo
+    $result = upload_foto('foto_empaque', $record_id, $upload_error);
+    if ($result === false) {
+        throw new RuntimeException($upload_error);
+    }
+    if ($result !== null) {
+        if ($foto_empaque) $old_to_delete[] = $foto_empaque;
+        $foto_empaque = $result;
+        $moved_files[] = $result;
+    }
+
+    // Persist every field (covers both the new and the existing row)
     $stmt = $pdo->prepare(
         'UPDATE componentes SET
             numero_parte   = :numero_parte,
@@ -232,42 +276,42 @@ if ($id > 0) {
         ':alto'           => $alto,
         ':peso'           => $peso,
         ':clasificacion'  => $clasificacion,
-        ':id'             => $id,
+        ':id'             => $record_id,
     ]);
-    $_SESSION['flash'] = [
-        'type' => 'success',
-        'msg'  => "Componente '{$numero_parte}' actualizado correctamente.",
-    ];
-} else {
-    // INSERT
-    $stmt = $pdo->prepare(
-        'INSERT INTO componentes
-            (numero_parte, foto_producto, foto_empaque,
-             estandar_pack, niveles_pallet, cajas_nivel,
-             ancho, fondo, alto, peso, clasificacion)
-         VALUES
-            (:numero_parte, :foto_producto, :foto_empaque,
-             :estandar_pack, :niveles_pallet, :cajas_nivel,
-             :ancho, :fondo, :alto, :peso, :clasificacion)'
-    );
-    $stmt->execute([
-        ':numero_parte'   => $numero_parte,
-        ':foto_producto'  => $foto_producto,
-        ':foto_empaque'   => $foto_empaque,
-        ':estandar_pack'  => $estandar_pack,
-        ':niveles_pallet' => $niveles_pallet,
-        ':cajas_nivel'    => $cajas_nivel,
-        ':ancho'          => $ancho,
-        ':fondo'          => $fondo,
-        ':alto'           => $alto,
-        ':peso'           => $peso,
-        ':clasificacion'  => $clasificacion,
-    ]);
-    $_SESSION['flash'] = [
-        'type' => 'success',
-        'msg'  => "Componente '{$numero_parte}' agregado correctamente.",
-    ];
+
+    $pdo->commit();
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    // Remove files written this request so nothing is orphaned on disk
+    foreach ($moved_files as $mf) {
+        $p = __DIR__ . '/uploads/' . $mf;
+        if (is_file($p)) {
+            unlink($p);
+        }
+    }
+    $_SESSION['form_errors'] = [$upload_error !== '' ? $upload_error : 'No se pudo guardar el componente.'];
+    $_SESSION['form_old']    = $_POST;
+    $redirect = $id > 0 ? "form.php?id={$id}" : 'form.php';
+    header("Location: {$redirect}");
+    exit;
 }
+
+// Remove replaced photos only after the record is safely committed
+foreach ($old_to_delete as $old) {
+    $p = __DIR__ . '/uploads/' . $old;
+    if (is_file($p) && is_writable($p)) {
+        unlink($p);
+    }
+}
+
+$_SESSION['flash'] = [
+    'type' => 'success',
+    'msg'  => $id > 0
+        ? "Componente '{$numero_parte}' actualizado correctamente."
+        : "Componente '{$numero_parte}' agregado correctamente.",
+];
 
 header('Location: index.php');
 exit;

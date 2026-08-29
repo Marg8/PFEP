@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS componentes (
     alto            DECIMAL(10,3)           DEFAULT NULL COMMENT 'En pulgadas',
     peso            DECIMAL(10,3)           DEFAULT NULL COMMENT 'En libras',
     clasificacion   ENUM('Chico','Mediano','Grande') DEFAULT NULL,
+    daily_demand    INT                     NOT NULL DEFAULT 0 COMMENT 'Demanda/consumo diario en piezas',
+    safety_stock_days INT                   NOT NULL DEFAULT 0 COMMENT 'Dias de inventario de seguridad',
+    lead_time_days  INT                     NOT NULL DEFAULT 0 COMMENT 'Tiempo de entrega del proveedor en dias',
     created_at      TIMESTAMP               NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP               NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migration for existing installations (idempotent)
+ALTER TABLE componentes
+    ADD COLUMN IF NOT EXISTS daily_demand      INT NOT NULL DEFAULT 0 COMMENT 'Demanda/consumo diario en piezas',
+    ADD COLUMN IF NOT EXISTS safety_stock_days INT NOT NULL DEFAULT 0 COMMENT 'Dias de inventario de seguridad',
+    ADD COLUMN IF NOT EXISTS lead_time_days    INT NOT NULL DEFAULT 0 COMMENT 'Tiempo de entrega del proveedor en dias';

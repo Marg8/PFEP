@@ -86,3 +86,29 @@ document.querySelectorAll('a.btn-delete').forEach(function(link) {
         }
     });
 });
+
+// Dynamic part-number search / filter (dashboard)
+document.querySelectorAll('input[data-target]').forEach(function(input) {
+    var table = document.getElementById(input.dataset.target);
+    if (!table) return;
+    var counter = document.getElementById('search-count');
+
+    function applyFilter() {
+        var term = input.value.trim().toLowerCase();
+        var rows = table.querySelectorAll('tbody tr[data-part]');
+        var shown = 0;
+        rows.forEach(function(row) {
+            var match = row.dataset.part.indexOf(term) !== -1;
+            row.style.display = match ? '' : 'none';
+            if (match) shown++;
+        });
+        if (counter) {
+            counter.textContent = term === ''
+                ? rows.length + ' partes'
+                : shown + ' de ' + rows.length + ' partes';
+        }
+    }
+
+    input.addEventListener('input', applyFilter);
+    applyFilter();
+});
