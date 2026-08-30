@@ -155,3 +155,42 @@ document.querySelectorAll('.btn-save-demanda').forEach(function(btn) {
         });
     });
 });
+
+// Import demand: dropzone filename + drag & drop
+(function() {
+    var dropzone = document.getElementById('dropzone');
+    var input    = document.getElementById('archivo');
+    var fileOut  = document.getElementById('dropzone-file');
+    if (!dropzone || !input) return;
+
+    function showFile() {
+        if (input.files && input.files[0]) {
+            if (fileOut) fileOut.textContent = '✅ ' + input.files[0].name;
+            dropzone.classList.add('has-file');
+        } else {
+            if (fileOut) fileOut.textContent = '';
+            dropzone.classList.remove('has-file');
+        }
+    }
+
+    input.addEventListener('change', showFile);
+
+    ['dragenter', 'dragover'].forEach(function(evt) {
+        dropzone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function(evt) {
+        dropzone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+    });
+    dropzone.addEventListener('drop', function(e) {
+        if (e.dataTransfer && e.dataTransfer.files.length) {
+            input.files = e.dataTransfer.files;
+            showFile();
+        }
+    });
+})();

@@ -197,36 +197,102 @@ require __DIR__ . '/partials/header.php';
 
 <div class="container">
 
-    <div class="form-card">
-        <h2>Carga masiva de demanda</h2>
-        <p class="muted">
-            La plantilla actualiza <strong>solo</strong> la demanda y parámetros logísticos
-            (<code>daily_demand</code>, <code>safety_stock_days</code>, <code>lead_time_days</code>)
-            de partes ya existentes. Las dimensiones e imágenes registradas
-            <strong>no se modifican</strong>.
-        </p>
+    <!-- Guía de 3 pasos -->
+    <ol class="import-steps">
+        <li class="step-card">
+            <span class="step-num">1</span>
+            <div class="step-body">
+                <h3>Descarga la plantilla</h3>
+                <p>Obtén un CSV con la demanda actual de todas tus partes registradas.</p>
+                <a href="import.php?template=1" class="btn-step">⬇️ Descargar plantilla</a>
+            </div>
+        </li>
+        <li class="step-card">
+            <span class="step-num">2</span>
+            <div class="step-body">
+                <h3>Edita los valores</h3>
+                <p>Actualiza <code>daily_demand</code>, <code>safety_stock_days</code> y <code>lead_time_days</code>. Vuelve a guardar como CSV.</p>
+            </div>
+        </li>
+        <li class="step-card">
+            <span class="step-num">3</span>
+            <div class="step-body">
+                <h3>Sube el archivo</h3>
+                <p>Carga el CSV para actualizar la demanda de forma masiva en segundos.</p>
+            </div>
+        </li>
+    </ol>
 
-        <div class="import-actions">
-            <a href="import.php?template=1" class="btn-submit">⬇️ Descargar plantilla con demanda actual</a>
-            <a href="demanda.php" class="btn-cancel">👁️ Ver demanda cargada</a>
+    <div class="import-grid">
+        <!-- Zona de carga -->
+        <div class="form-card upload-card">
+            <h2>Carga masiva de demanda</h2>
+
+            <form method="POST" action="import.php" enctype="multipart/form-data" class="import-form" id="import-form">
+                <label class="dropzone" id="dropzone" for="archivo">
+                    <input type="file" id="archivo" name="archivo"
+                           accept=".csv,text/csv" required class="dropzone-input">
+                    <span class="dropzone-icon">📄</span>
+                    <span class="dropzone-title">Arrastra tu archivo CSV aquí</span>
+                    <span class="dropzone-hint">o haz clic para seleccionarlo</span>
+                    <span class="dropzone-file" id="dropzone-file"></span>
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">🚀 Importar y actualizar</button>
+                    <a href="demanda.php" class="btn-cancel">👁️ Ver demanda cargada</a>
+                </div>
+            </form>
         </div>
 
-        <form method="POST" action="import.php" enctype="multipart/form-data" class="import-form">
-            <div class="form-group full">
-                <label for="archivo">Archivo CSV de demanda <span style="color:red">*</span></label>
-                <input type="file" id="archivo" name="archivo" accept=".csv,text/csv" required>
+        <!-- Formato requerido -->
+        <aside class="form-card info-card">
+            <h2>Formato requerido</h2>
+            <p class="muted">La primera fila del CSV debe ser el encabezado con estas columnas:</p>
+            <table class="cols-table">
+                <tbody>
+                    <tr><td><code>part_number</code></td><td><span class="tag tag-req">Obligatorio</span></td></tr>
+                    <tr><td><code>daily_demand</code></td><td><span class="tag tag-req">Obligatorio</span></td></tr>
+                    <tr><td><code>safety_stock_days</code></td><td><span class="tag tag-opt">Opcional</span></td></tr>
+                    <tr><td><code>lead_time_days</code></td><td><span class="tag tag-opt">Opcional</span></td></tr>
+                </tbody>
+            </table>
+            <div class="info-note">
+                ℹ️ Solo se actualiza la demanda y los parámetros logísticos de partes
+                <strong>ya existentes</strong>. Las dimensiones e imágenes registradas
+                <strong>no se modifican</strong>.
             </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-submit">🚀 Importar y actualizar</button>
-            </div>
-        </form>
+        </aside>
     </div>
 
     <?php if ($result !== null): ?>
-        <div class="form-card">
+        <?php
+            $n_updated  = (int)$result['updated'];
+            $n_notfound = count($result['not_found']);
+            $n_ignored  = count($result['row_errors']);
+            $has_fatal  = !empty($result['errors']);
+        ?>
+        <div class="form-card result-card">
             <h2>Resultado de la importación</h2>
 
-            <?php if (!empty($result['errors'])): ?>
+            <?php if (!$has_fatal): ?>
+                <div class="result-stats">
+                    <div class="stat stat-ok">
+                        <span class="stat-num"><?= $n_updated ?></span>
+                        <span class="stat-label">Actualizadas</span>
+                    </div>
+                    <div class="stat stat-warn">
+                        <span class="stat-num"><?= $n_notfound ?></span>
+                        <span class="stat-label">No encontradas</span>
+                    </div>
+                    <div class="stat stat-err">
+                        <span class="stat-num"><?= $n_ignored ?></span>
+                        <span class="stat-label">Líneas ignoradas</span>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($has_fatal): ?>
                 <div class="flash error">
                     <ul style="margin-left:16px">
                         <?php foreach ($result['errors'] as $e): ?>
@@ -236,20 +302,20 @@ require __DIR__ . '/partials/header.php';
                 </div>
             <?php endif; ?>
 
-            <?php if ($result['updated'] > 0): ?>
+            <?php if ($n_updated > 0): ?>
                 <div class="flash success">
-                    ✅ <?= (int)$result['updated'] ?> parte(s) actualizada(s) correctamente.
+                    ✅ <?= $n_updated ?> parte(s) actualizada(s) correctamente.
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($result['not_found'])): ?>
+            <?php if ($n_notfound > 0): ?>
                 <div class="flash error">
-                    <strong>No encontradas (<?= count($result['not_found']) ?>):</strong>
+                    <strong>No encontradas (<?= $n_notfound ?>):</strong>
                     <?= htmlspecialchars(implode(', ', $result['not_found']), ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($result['row_errors'])): ?>
+            <?php if ($n_ignored > 0): ?>
                 <div class="flash error">
                     <strong>Líneas ignoradas:</strong>
                     <ul style="margin-left:16px">
@@ -262,6 +328,7 @@ require __DIR__ . '/partials/header.php';
 
             <div class="form-actions">
                 <a href="dashboard.php" class="btn-submit">📊 Ver cálculo de espacio</a>
+                <a href="import.php" class="btn-cancel">↻ Importar otro archivo</a>
             </div>
         </div>
     <?php endif; ?>
