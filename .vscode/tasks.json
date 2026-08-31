@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "PFEP: Iniciar servidor (php.ini local)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "set -a && . ./.env.local && set +a && exec php8.3 -c php.ini -S 0.0.0.0:8080 -t ."
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "detail": "Carga .env.local y arranca PHP 8.3 en http://localhost:8080 usando php.ini sin límite de subida de imágenes."
+        }
+    ]
+}

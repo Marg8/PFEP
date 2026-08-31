@@ -10,10 +10,31 @@
 
 require_once __DIR__ . '/config/db.php';
 
+// TEMPORAL: mostrar errores en el navegador para diagnóstico. Quitar en producción.
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
+    exit;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Detect a POST that exceeded post_max_size. When that happens PHP    */
+/*  silently discards $_POST and $_FILES, so the record would save with */
+/*  no data / no photo. Fail loudly with a clear message instead.       */
+/* ------------------------------------------------------------------ */
+$content_length = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($content_length > 0 && empty($_POST) && empty($_FILES)) {
+    $limit = ini_get('post_max_size');
+    $_SESSION['form_errors'] = [
+        "La imagen es demasiado grande y el servidor la rechazó (límite post_max_size = {$limit}). "
+        . "Configura 'upload_max_filesize' y 'post_max_size' sin límite en php.ini.",
+    ];
+    header('Location: form.php');
     exit;
 }
 
@@ -63,7 +84,27 @@ function upload_foto(string $field, int $record_id, string &$error): string|fals
     $file = $_FILES[$field];
 
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        $error = "Error al subir el archivo del campo '{$field}' (código {$file['error']}).";
+        switch ($file['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+                $limit = ini_get('upload_max_filesize');
+                $error = "La imagen '{$field}' supera el tamaño máximo permitido por el servidor "
+                       . "(upload_max_filesize = {$limit}). Configura PHP sin límite de carga.";
+                break;
+            case UPLOAD_ERR_FORM_SIZE:
+                $error = "La imagen '{$field}' supera el tamaño máximo permitido por el formulario.";
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $error = "La imagen '{$field}' se subió de forma incompleta. Intenta de nuevo.";
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+                $error = "Falta el directorio temporal de PHP (upload_tmp_dir). Revisa la configuración del servidor.";
+                break;
+            case UPLOAD_ERR_CANT_WRITE:
+                $error = "El servidor no pudo escribir la imagen '{$field}' en disco (permisos del directorio temporal).";
+                break;
+            default:
+                $error = "Error al subir el archivo del campo '{$field}' (código {$file['error']}).";
+        }
         return false;
     }
 
@@ -75,27 +116,41 @@ function upload_foto(string $field, int $record_id, string &$error): string|fals
         return false;
     }
 
-    // Validate MIME type
-    $allowed_mime = ['image/jpeg', 'image/png', 'image/webp'];
-    $finfo        = finfo_open(FILEINFO_MIME_TYPE);
-    $mime         = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // Validate MIME type when the fileinfo extension is available.
+    // Some shared/XAMPP setups ship with fileinfo disabled; in that case we
+    // fall back to the extension check already performed above.
+    if (function_exists('finfo_open')) {
+        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp'];
+        $finfo        = finfo_open(FILEINFO_MIME_TYPE);
+        $mime         = $finfo ? finfo_file($finfo, $file['tmp_name']) : false;
+        if ($finfo) {
+            finfo_close($finfo);
+        }
 
-    if (!in_array($mime, $allowed_mime, true)) {
-        $error = "El archivo '{$field}' no es una imagen válida (JPG, PNG o WEBP).";
-        return false;
-    }
-
-    // Max 10 MB
-    if ($file['size'] > 10 * 1024 * 1024) {
-        $error = "El archivo '{$field}' supera el límite de 10 MB.";
-        return false;
+        if ($mime !== false && !in_array($mime, $allowed_mime, true)) {
+            $error = "El archivo '{$field}' no es una imagen válida (JPG, PNG o WEBP).";
+            return false;
+        }
+    } elseif (function_exists('mime_content_type')) {
+        $allowed_mime = ['image/jpeg', 'image/png', 'image/webp'];
+        $mime         = mime_content_type($file['tmp_name']);
+        if ($mime !== false && !in_array($mime, $allowed_mime, true)) {
+            $error = "El archivo '{$field}' no es una imagen válida (JPG, PNG o WEBP).";
+            return false;
+        }
     }
 
     // Ensure the target directory exists (create it with write permissions)
     $upload_dir = __DIR__ . '/uploads/photos';
     if (!is_dir($upload_dir) && !mkdir($upload_dir, 0775, true) && !is_dir($upload_dir)) {
-        $error = "No se pudo crear el directorio de imágenes 'uploads/photos'.";
+        $error = "No se pudo crear el directorio de imágenes 'uploads/photos'. "
+               . "Verifica los permisos de escritura de la carpeta 'uploads'.";
+        return false;
+    }
+
+    if (!is_writable($upload_dir)) {
+        $error = "El directorio 'uploads/photos' no tiene permisos de escritura. "
+               . "Ajusta los permisos de la carpeta en el servidor.";
         return false;
     }
 
@@ -291,7 +346,7 @@ try {
             unlink($p);
         }
     }
-    $_SESSION['form_errors'] = [$upload_error !== '' ? $upload_error : 'No se pudo guardar el componente.'];
+    $_SESSION['form_errors'] = [$upload_error !== '' ? $upload_error : 'No se pudo guardar el componente: ' . $e->getMessage()];
     $_SESSION['form_old']    = $_POST;
     $redirect = $id > 0 ? "form.php?id={$id}" : 'form.php';
     header("Location: {$redirect}");

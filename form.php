@@ -86,7 +86,8 @@ require __DIR__ . '/partials/header.php';
             </div>
         <?php endif; ?>
 
-        <form method="POST"
+          <form id="component-form"
+              method="POST"
               action="process.php"
               enctype="multipart/form-data"
               novalidate>
@@ -262,13 +263,21 @@ require __DIR__ . '/partials/header.php';
             </div><!-- /.form-grid -->
 
             <div class="form-actions">
-                <button type="submit" class="btn-submit">
+                <button type="submit" class="btn-submit" id="component-submit">
                     <?= $is_edit ? '💾 Guardar Cambios' : '✅ Agregar Componente' ?>
                 </button>
                 <a href="index.php" class="btn-cancel">Cancelar</a>
             </div>
 
         </form>
+    </div>
+</div>
+
+<div id="save-loading" class="save-loading" role="status" aria-live="assertive" aria-hidden="true" hidden>
+    <div class="save-loading-content">
+        <span class="save-spinner" aria-hidden="true"></span>
+        <strong id="save-loading-message">Subiendo imágenes y guardando…</strong>
+        <span>Espera un momento y no cierres esta página.</span>
     </div>
 </div>
 

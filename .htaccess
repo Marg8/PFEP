@@ -1,0 +1,16 @@
+# Accept original-size photos from tablets and phones (XAMPP / mod_php).
+<IfModule mod_php.c>
+    php_value upload_max_filesize 0
+    php_value post_max_size 0
+    php_value max_file_uploads 20
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 0
+    php_value post_max_size 0
+    php_value max_file_uploads 20
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 0
+    php_value post_max_size 0
+    php_value max_file_uploads 20
+</IfModule>

@@ -54,6 +54,43 @@ document.querySelectorAll('input[type="file"].foto-input').forEach(function(inpu
     });
 });
 
+// Keep the user informed while photos upload and the component is saved.
+var componentForm = document.getElementById('component-form');
+if (componentForm) {
+    var componentSubmit = document.getElementById('component-submit');
+    var saveLoading = document.getElementById('save-loading');
+    var saveLoadingMessage = document.getElementById('save-loading-message');
+
+    componentForm.addEventListener('submit', function() {
+        var selectedFiles = componentForm.querySelectorAll('input[type="file"]');
+        var hasPhoto = Array.prototype.some.call(selectedFiles, function(input) {
+            return input.files && input.files.length > 0;
+        });
+
+        if (saveLoadingMessage) {
+            saveLoadingMessage.textContent = hasPhoto
+                ? 'Subiendo imágenes y guardando…'
+                : 'Guardando componente…';
+        }
+        if (componentSubmit) {
+            componentSubmit.disabled = true;
+            componentSubmit.textContent = 'Guardando…';
+        }
+        if (saveLoading) {
+            saveLoading.hidden = false;
+            saveLoading.setAttribute('aria-hidden', 'false');
+        }
+    });
+
+    window.addEventListener('pageshow', function() {
+        if (componentSubmit) componentSubmit.disabled = false;
+        if (saveLoading) {
+            saveLoading.hidden = true;
+            saveLoading.setAttribute('aria-hidden', 'true');
+        }
+    });
+}
+
 
 // Lightbox
 var lightbox = document.getElementById('lightbox');
